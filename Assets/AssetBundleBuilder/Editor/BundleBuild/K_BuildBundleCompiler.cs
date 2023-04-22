@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using Packages.Rider.Editor.Util;
 using PlasticPipe.PlasticProtocol.Messages;
+using Sirenix.OdinInspector.Demos.RPGEditor;
 using Sirenix.OdinInspector.Editor.Modules;
 using UnityEngine;
 
@@ -95,6 +98,65 @@ namespace Kaki_AssetBundleBuilder
         /// </summary>
         public static void BuildRootSubFolder()
         {
+            if (mBundleMoudleData.rootFolderPathArr == null || mBundleMoudleData.rootFolderPathArr.Length == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < mBundleMoudleData.rootFolderPathArr.Length; i++)
+            {
+                string path = mBundleMoudleData.rootFolderPathArr[i] + "/";
+                //Get All Folder
+                string[] folderArr = Directory.GetDirectories(path);
+                foreach (var folder in folderArr)
+                {
+                    path = folder.Replace(@"\", "/");
+                    int nameIndex = path.LastIndexOf("/", StringComparison.Ordinal) + 1;
+                    string bundleName = GenerateBundleName(path.Substring(nameIndex, path.Length - nameIndex));
+                    if (!IsRepeatBundleFile(path))
+                    {
+                        mAllBundlePathList.Add(path);
+                        if (!mAllFolderBundleDic.ContainsKey(bundleName))
+                        {
+                            mAllFolderBundleDic.Add(bundleName, new List<string>() { path });
+                        }
+                        else
+                        {
+                            mAllFolderBundleDic[bundleName].Add(path);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("RepeatBundle File FolderPath: " + path);
+                    }
+
+                    //Sub Folder 
+                    string[] filePathArr = Directory.GetFiles(path, "*");
+                    foreach (var filePath in filePathArr)
+                    {
+                        if (!filePath.EndsWith(".meta"))
+                        {
+                            string abFilePath = filePath.Replace(@"\", "/");
+                            if (!IsRepeatBundleFile(abFilePath))
+                            {
+                                mAllBundlePathList.Add(abFilePath);
+                                if (!mAllFolderBundleDic.ContainsKey(bundleName))
+                                {
+                                    mAllFolderBundleDic.Add(bundleName, new List<string>() { abFilePath });
+                                }
+                                else
+                                {
+                                    mAllFolderBundleDic[bundleName].Add(abFilePath);
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogError("RepeatBundle File FolderPath: " + abFilePath);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
